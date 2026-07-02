@@ -8,11 +8,13 @@ public class LinkQueue<E> {
         front = null;
         rear = null;
     }
-
+    
+    //判断当前队列是否为空
     public boolean empty() {
         return front == null;
     }
 
+    //入队    
     public void push(E e ) {
 		LinkNode<E> s = new LinkNode<E>(e);
 		if (empty()) {
@@ -24,6 +26,7 @@ public class LinkQueue<E> {
 		}
 	}
 
+    //出队
     public 	E pop() {
 		E e;
 		if (empty()) {
@@ -40,11 +43,13 @@ public class LinkQueue<E> {
 		return e;
 	}
 
+    //取对头元素
     public E peek() {
         if (front == null) return null;
         return front.data;
     }
 
+    //队列大小
     public int size() {
         int count = 0;
         LinkNode<E> s = front;
@@ -55,6 +60,7 @@ public class LinkQueue<E> {
         return count;
     }
 
+    //取对头
     public LinkNode<E> getFront() {
         return front;
     }

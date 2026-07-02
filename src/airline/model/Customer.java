@@ -17,6 +17,10 @@ public class Customer implements Comparable<Customer> {
     }
 
     public String getCabinName() {
+        return getCabinNameStatic(cabinClass);
+    }
+
+    public static String getCabinNameStatic(int cabinClass) {
         switch (cabinClass) {
             case 1: return "头等舱";
             case 2: return "商务舱";

@@ -2,13 +2,12 @@ package airline.service;
 
 import airline.model.*;
 import airline.datastructure.LinkNode;
-import java.time.LocalDate;
 
 public class AirlineService {
     private FlightList flightList;
 
     public AirlineService() {
-        this.flightList = new FlightList(10);
+        this.flightList = new FlightList(30);
         this.flightList.init();
     }
 
@@ -16,27 +15,15 @@ public class AirlineService {
         return flightList;
     }
 
-    // ==================== 航线查询 ====================
-    public String queryRoute(String station) {
-        FlightRoute route = flightList.searchByStation(station);
-        if (route == null) {
-            return "无此航线。";
-        }
-        String nearestDate = calculateNearestFlightDate(route.flightDay);
-        return route.toString() + "\n最近航班日期: " + nearestDate;
+    public FlightRoute[] queryRouteByStation(String station) {
+        return flightList.searchByStationAll(station);
     }
 
-    private String calculateNearestFlightDate(int flightDay) {
-        LocalDate today = LocalDate.now();
-        int todayDayOfWeek = today.getDayOfWeek().getValue();
-        int daysUntil = (flightDay - todayDayOfWeek + 7) % 7;
-        if (daysUntil == 0) {
-            daysUntil = 7;
-        }
-        return today.plusDays(daysUntil).toString();
+    public FlightRoute[] searchByRoute(String origin, String destination) {
+        return flightList.searchByRoute(origin, destination);
     }
 
-    // ==================== 客票预订 ====================
+    // ==================== 客票预订（按舱位） ====================
     public String bookTicket(String flightNum, int count, String name, int cabinClass) {
         FlightRoute route = flightList.searchByFlight(flightNum);
         if (route == null) {
@@ -49,44 +36,34 @@ public class AirlineService {
             return "无效的舱位等级！";
         }
 
-        if (route.remainingTickets >= count) {
+        int remaining = route.getRemainingByCabin(cabinClass);
+        if (remaining >= count) {
             Customer customer = new Customer(name, count, cabinClass);
             route.bookedList.insert(customer);
-            route.remainingTickets -= count;
+            route.reduceRemaining(cabinClass, count);
             return "订票成功！\n客户: " + name + ", 票数: " + count
                     + ", 舱位: " + customer.getCabinName()
-                    + "\n当前余票: " + route.remainingTickets;
+                    + "\n该舱位剩余: " + route.getRemainingByCabin(cabinClass);
         } else {
-            return "余票不足！当前余票: " + route.remainingTickets + "，您需要: " + count + " 张";
+            int totalRemaining = route.totalRemaining();
+            return "该舱位余票不足！\n" + Customer.getCabinNameStatic(cabinClass)
+                    + "剩余: " + remaining + "，您需要: " + count + " 张"
+                    + "\n（该航班总余票: " + totalRemaining + "）";
         }
     }
 
     // ==================== 加入等候队列 ====================
-    public String joinWaitQueue(String flightNum, int count, String name) {
+    public String joinWaitQueue(String flightNum, int count, String name, int cabinClass) {
         FlightRoute route = flightList.searchByFlight(flightNum);
         if (route == null) {
             return "航班不存在！";
         }
-        Waiter waiter = new Waiter(name, count);
+        Waiter waiter = new Waiter(name, count, cabinClass);
         route.waitQueue.push(waiter);
-        return "已加入等候队列，当前队列长度: " + route.waitQueue.size();
-    }
-
-    // ==================== 推荐其他航班 ====================
-    public String recommendOtherFlights(FlightRoute except, int needTickets) {
-        StringBuilder sb = new StringBuilder();
-        boolean found = false;
-        for (int i = 0; i < flightList.getCount(); i++) {
-            FlightRoute r = flightList.getRoute(i);
-            if (r != except && r.remainingTickets >= needTickets) {
-                sb.append(r.toString()).append("\n");
-                found = true;
-            }
-        }
-        if (!found) {
-            sb.append("（暂无可满足需求的航班）");
-        }
-        return sb.toString();
+        int position = route.waitQueue.size();
+        return "候补成功！\n客户: " + name + ", 票数: " + count
+                + ", 舱位: " + Customer.getCabinNameStatic(cabinClass)
+                + "\n当前候补位次: 第 " + position + " 位";
     }
 
     // ==================== 退票处理 ====================
@@ -102,18 +79,19 @@ public class AirlineService {
         }
 
         int releasedTickets = customer.ticketCount;
+        int cabinClass = customer.cabinClass;
         boolean deleted = route.bookedList.delete(name);
         if (!deleted) {
             return "退票失败！";
         }
 
-        route.remainingTickets += releasedTickets;
+        route.increaseRemaining(cabinClass, releasedTickets);
         StringBuilder sb = new StringBuilder();
         sb.append("退票成功！客户: ").append(name)
-          .append("，释放票数: ").append(releasedTickets)
-          .append("\n当前余票: ").append(route.remainingTickets);
+          .append("，释放 ").append(Customer.getCabinNameStatic(cabinClass))
+          .append(" ").append(releasedTickets).append(" 张")
+          .append("\n该舱位剩余: ").append(route.getRemainingByCabin(cabinClass));
 
-        // 处理等候队列 FIFO
         String subResult = processWaitQueue(route);
         if (!subResult.isEmpty()) {
             sb.append("\n").append(subResult);
@@ -126,60 +104,22 @@ public class AirlineService {
         int substituted = 0;
         while (!route.waitQueue.empty()) {
             Waiter waiter = route.waitQueue.peek();
-            if (route.remainingTickets >= waiter.ticketCount) {
+            int remaining = route.getRemainingByCabin(waiter.cabinClass);
+            if (remaining >= waiter.ticketCount) {
                 route.waitQueue.pop();
-                Customer customer = new Customer(waiter.name, waiter.ticketCount, 3);
+                Customer customer = new Customer(waiter.name, waiter.ticketCount, waiter.cabinClass);
                 route.bookedList.insert(customer);
-                route.remainingTickets -= waiter.ticketCount;
+                route.reduceRemaining(waiter.cabinClass, waiter.ticketCount);
                 substituted++;
                 sb.append("替补订票成功: ").append(waiter.name)
-                  .append("，票数: ").append(waiter.ticketCount).append("\n");
+                  .append("，").append(Customer.getCabinNameStatic(waiter.cabinClass))
+                  .append(" ").append(waiter.ticketCount).append(" 张\n");
             } else {
                 break;
             }
         }
         if (substituted > 0) {
-            sb.append("共替补 ").append(substituted)
-              .append(" 位等候客户，当前余票: ").append(route.remainingTickets);
-        }
-        return sb.toString();
-    }
-
-    // ==================== 获取已订票客户信息 ====================
-    public String getBookedCustomersInfo(String flightNum) {
-        FlightRoute route = flightList.searchByFlight(flightNum);
-        if (route == null) return null;
-        if (route.bookedList.isEmpty()) return "";
-
-        StringBuilder sb = new StringBuilder();
-        LinkNode<Customer> curr = route.bookedList.getHead();
-        while (curr != null) {
-            sb.append(curr.data.toString()).append("\n");
-            curr = curr.next;
-        }
-        return sb.toString();
-    }
-
-    // ==================== 获取等候队列信息 ====================
-    public String getWaitQueueInfo(String flightNum) {
-        FlightRoute route = flightList.searchByFlight(flightNum);
-        if (route == null) return null;
-        if (route.waitQueue.empty()) return "";
-
-        StringBuilder sb = new StringBuilder();
-        LinkNode<Waiter> curr = route.waitQueue.getFront();
-        while (curr != null) {
-            sb.append(curr.data.toString()).append("\n");
-            curr = curr.next;
-        }
-        return sb.toString();
-    }
-
-    // ==================== 获取所有航线信息 ====================
-    public String getAllRoutesInfo() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < flightList.getCount(); i++) {
-            sb.append(flightList.getRoute(i).toString()).append("\n");
+            sb.append("共替补 ").append(substituted).append(" 位等候客户");
         }
         return sb.toString();
     }
