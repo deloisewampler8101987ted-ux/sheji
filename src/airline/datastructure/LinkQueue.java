@@ -5,8 +5,8 @@ public class LinkQueue<E> {
     private LinkNode<E> rear;
 
     public LinkQueue() {
-        this.front = null;
-        this.rear = null;
+        front = null;
+        rear = null;
     }
 
     public boolean empty() {
@@ -44,8 +44,6 @@ public class LinkQueue<E> {
         if (front == null) return null;
         return front.data;
     }
-
-    
 
     public int size() {
         int count = 0;

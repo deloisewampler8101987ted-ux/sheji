@@ -2,71 +2,64 @@ package airline.datastructure;
 
 import airline.model.Customer;
 
-public class LinkList<T extends Comparable<T>> {
-    private LinkNode<T> head;
-    private int size;
+public class LinkList<E extends Comparable<E>> {
+    LinkNode<E> head;
 
     public LinkList() {
-        this.head = null;
-        this.size = 0;
+        head = new LinkNode<E>();
+        head.next = null;
     }
 
-    public void insert(T data) {
-        LinkNode<T> newNode = new LinkNode<>(data);
-        if (head == null || data.compareTo(head.data) < 0) {
-            newNode.next = head;
-            head = newNode;
-        } else {
-            LinkNode<T> prev = head;
-            while (prev.next != null && prev.next.data.compareTo(data) < 0) {
-                prev = prev.next;
-            }
-            newNode.next = prev.next;
-            prev.next = newNode;
+    public void insert(E data) {
+        LinkNode<E> p = head;
+        while (p.next != null && p.next.data.compareTo(data) < 0) {
+            p = p.next;
         }
-        size++;
+        LinkNode<E> s = new LinkNode<E>(data);
+        s.next = p.next;
+        p.next = s;
     }
 
-    public T search(String name) {
-        LinkNode<T> curr = head;
-        while (curr != null) {
-            if (curr.data instanceof Customer && ((Customer) curr.data).name.equals(name)) {
-                return curr.data;
+    public E search(String name) {
+        LinkNode<E> p = head.next;
+        while (p != null) {
+            if (p.data instanceof Customer && ((Customer) p.data).name.equals(name)) {
+                return p.data;
             }
-            curr = curr.next;
+            p = p.next;
         }
         return null;
     }
 
     public boolean delete(String name) {
-        if (head == null) return false;
-        if (head.data instanceof Customer && ((Customer) head.data).name.equals(name)) {
-            head = head.next;
-            size--;
-            return true;
-        }
-        LinkNode<T> prev = head;
-        while (prev.next != null) {
-            if (prev.next.data instanceof Customer
-                    && ((Customer) prev.next.data).name.equals(name)) {
-                prev.next = prev.next.next;
-                size--;
+        LinkNode<E> pre = head;
+        LinkNode<E> p = head.next;
+        while (p != null) {
+            if (p.data instanceof Customer && ((Customer) p.data).name.equals(name)) {
+                pre.next = p.next;
                 return true;
             }
-            prev = prev.next;
+            pre = p;
+            p = p.next;
         }
         return false;
     }
 
-    public LinkNode<T> getHead() {
+    public LinkNode<E> getHead() {
         return head;
     }
 
     public boolean isEmpty() {
-        return head == null;
+        return head.next == null;
     }
 
     public int size() {
-        return size;
+        int cnt = 0;
+        LinkNode<E> p = head.next;
+        while (p != null) {
+            cnt++;
+            p = p.next;
+        }
+        return cnt;
     }
 }
