@@ -1,0 +1,12 @@
+# 编译输出
+*.class
+bin/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# 系统文件
+.DS_Store
+Thumbs.db

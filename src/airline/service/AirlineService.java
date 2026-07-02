@@ -1,7 +1,6 @@
 package airline.service;
 
 import airline.model.*;
-import airline.datastructure.LinkNode;
 
 public class AirlineService {
     private FlightList flightList;

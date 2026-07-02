@@ -135,13 +135,11 @@ public class AirlineGUI extends JFrame {
     class ButtonEditor extends DefaultCellEditor {
         private JButton button;
         private String flightNum;
-        private JTable table;
         private DefaultTableModel tableModel;
         private boolean isPushed;
 
         public ButtonEditor(JCheckBox checkBox, JTable table, DefaultTableModel tableModel) {
             super(checkBox);
-            this.table = table;
             this.tableModel = tableModel;
             button = new JButton();
             button.setOpaque(true);
