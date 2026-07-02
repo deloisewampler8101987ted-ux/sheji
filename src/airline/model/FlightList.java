@@ -15,7 +15,9 @@ public class FlightList {
         addRoute(new FlightRoute("上海", "北京", "CA1111", "B1111", 1,
                 20, 15, 50, 40, 80, 65));
         addRoute(new FlightRoute("北京", "上海", "MU2222", "B2222", 3,
-                25, 25, 60, 60, 115, 100));
+                60, 60, 60, 60, 115, 100));
+        addRoute(new FlightRoute("北京", "上海", "MU3333", "B3333", 3,
+                60, 60, 60, 60, 115, 100));
         addRoute(new FlightRoute("北京", "广州", "CZ3333", "A3333", 5,
                 20, 2, 50, 3, 110, 0));
         addRoute(new FlightRoute("上海", "深圳", "ZH1234", "A1234", 7,

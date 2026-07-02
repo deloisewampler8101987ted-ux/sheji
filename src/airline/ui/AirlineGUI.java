@@ -290,7 +290,105 @@ public class AirlineGUI extends JFrame {
                     return;
                 }
                 String msg = service.bookTicket(flightNum, count, name, cabinClass);
-                JOptionPane.showMessageDialog(AirlineGUI.this, msg);
+                if (msg.contains("余票不足")) {
+                    // 推荐同目的地其他航线
+                    showRecommendationDialog(flightNum, route.terminalStation,
+                            cabinClass, count, msg);
+                } else {
+                    JOptionPane.showMessageDialog(AirlineGUI.this, msg);
+                }
+            }
+        }
+
+        private void showRecommendationDialog(String excludeFlightNum, String destination,
+                int cabinClass, int needTickets, String failMsg) {
+            FlightRoute[] recommendations = service.recommendSameDestination(
+                    excludeFlightNum, destination, cabinClass, needTickets);
+
+            JPanel panel = new JPanel(new BorderLayout(10, 10));
+
+            JLabel failLabel = new JLabel("<html>" + failMsg.replace("\n", "<br>") + "</html>");
+            failLabel.setForeground(Color.RED);
+            panel.add(failLabel, BorderLayout.NORTH);
+
+            if (recommendations.length == 0) {
+                JLabel noRecLabel = new JLabel("暂无可到达「" + destination + "」的其他航线。");
+                panel.add(noRecLabel, BorderLayout.CENTER);
+            } else {
+                String[] cols = {"航班号", "起始站", "飞机号", "飞行日",
+                        Customer.getCabinNameStatic(cabinClass) + "余票", "操作"};
+                DefaultTableModel recModel = new DefaultTableModel(cols, 0) {
+                    public boolean isCellEditable(int row, int col) { return col == 5; }
+                };
+                for (FlightRoute r : recommendations) {
+                    recModel.addRow(new Object[]{
+                            r.flightNumber, r.originStation, r.aircraftNumber,
+                            FlightRoute.dayOfWeek(r.flightDay),
+                            r.getRemainingByCabin(cabinClass),
+                            "预订"
+                    });
+                }
+                JTable recTable = new JTable(recModel);
+                recTable.setRowHeight(25);
+                recTable.getTableHeader().setReorderingAllowed(false);
+                recTable.getColumnModel().getColumn(5).setCellRenderer(new ButtonRenderer());
+                recTable.getColumnModel().getColumn(5).setCellEditor(
+                        new RecButtonEditor(new JCheckBox(), recTable, recModel, cabinClass));
+                JScrollPane recScroll = new JScrollPane(recTable);
+                recScroll.setPreferredSize(new Dimension(600, 150));
+                recScroll.setBorder(new TitledBorder("推荐以下到达「" + destination + "」的航线"));
+                panel.add(recScroll, BorderLayout.CENTER);
+            }
+
+            JOptionPane.showMessageDialog(AirlineGUI.this, panel,
+                    "订票失败 - 为您推荐其他航线",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
+
+        // 推荐表格中的预订按钮编辑器
+        class RecButtonEditor extends DefaultCellEditor {
+            private JButton button;
+            private String recFlightNum;
+            private int recRemaining;
+            private int cabinClass;
+            private JTable recTable;
+            private DefaultTableModel recModel;
+            private boolean isPushed;
+
+            public RecButtonEditor(JCheckBox checkBox, JTable table,
+                    DefaultTableModel model, int cabinClass) {
+                super(checkBox);
+                this.recTable = table;
+                this.recModel = model;
+                this.cabinClass = cabinClass;
+                button = new JButton();
+                button.setOpaque(true);
+                button.addActionListener(e -> fireEditingStopped());
+            }
+
+            public Component getTableCellEditorComponent(JTable table, Object value,
+                    boolean isSelected, int row, int column) {
+                recFlightNum = (String) recModel.getValueAt(row, 0);
+                recRemaining = (Integer) recModel.getValueAt(row, 4);
+                button.setText((value == null) ? "" : value.toString());
+                isPushed = true;
+                return button;
+            }
+
+            public Object getCellEditorValue() {
+                if (isPushed) {
+                    FlightRoute recRoute = service.getFlightList().searchByFlight(recFlightNum);
+                    if (recRoute != null) {
+                        showBookDialog(recFlightNum, recRoute, cabinClass, recRemaining);
+                    }
+                }
+                isPushed = false;
+                return "预订";
+            }
+
+            public boolean stopCellEditing() {
+                isPushed = false;
+                return super.stopCellEditing();
             }
         }
 

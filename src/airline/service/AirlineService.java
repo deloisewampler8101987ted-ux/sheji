@@ -65,6 +65,39 @@ public class AirlineService {
                 + "\n当前候补位次: 第 " + position + " 位";
     }
 
+    // ==================== 推荐同目的地其他航线 ====================
+    /**
+     * 查找到达同一目的地的其他有余票航线
+     * @param excludeFlightNum 排除的航班号
+     * @param destination      目的地（终点站）
+     * @param cabinClass       舱位等级
+     * @param needTickets      需要的票数
+     * @return 匹配的航线数组
+     */
+    public FlightRoute[] recommendSameDestination(String excludeFlightNum,
+            String destination, int cabinClass, int needTickets) {
+        int matchCount = 0;
+        for (int i = 0; i < flightList.getCount(); i++) {
+            FlightRoute r = flightList.getRoute(i);
+            if (!r.flightNumber.equals(excludeFlightNum)
+                    && r.terminalStation.equals(destination)
+                    && r.getRemainingByCabin(cabinClass) >= needTickets) {
+                matchCount++;
+            }
+        }
+        FlightRoute[] result = new FlightRoute[matchCount];
+        int idx = 0;
+        for (int i = 0; i < flightList.getCount(); i++) {
+            FlightRoute r = flightList.getRoute(i);
+            if (!r.flightNumber.equals(excludeFlightNum)
+                    && r.terminalStation.equals(destination)
+                    && r.getRemainingByCabin(cabinClass) >= needTickets) {
+                result[idx++] = r;
+            }
+        }
+        return result;
+    }
+
     // ==================== 退票处理 ====================
     public String refundTicket(String flightNum, String name) {
         FlightRoute route = flightList.searchByFlight(flightNum);
