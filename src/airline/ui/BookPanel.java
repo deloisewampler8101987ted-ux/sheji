@@ -119,54 +119,106 @@ public class BookPanel extends JPanel {
                 return;
             }
 
-            JPanel p = new JPanel(new GridLayout(4, 1, 5, 5));
-            p.setBorder(new EmptyBorder(5, 5, 5, 5));
-            JLabel titleLabel = new JLabel("航班 " + fn + "  ("
-                    + route.origin + " → " + route.dest + ")");
-            titleLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
-            p.add(titleLabel);
+            String[] cabinNames = {"头等舱", "商务舱", "经济舱"};
 
-            ButtonGroup bg = new ButtonGroup();
-            JRadioButton[] rbs = new JRadioButton[3];
-            for (int i = 0; i < 3; i++) {
-                int rem = route.cabinRem(i + 1);
-                int cap = route.cabinCap(i + 1);
-                rbs[i] = new JRadioButton(Customer.cabinName(i + 1)
-                        + "  —  余票: " + rem + " / " + cap
-                        + (rem == 0 ? "  (已售罄)" : ""));
-                rbs[i].setEnabled(rem > 0);
-                bg.add(rbs[i]);
-                p.add(rbs[i]);
-            }
+            while (true) {
+                JPanel p = new JPanel(new GridLayout(4, 1, 5, 5));
+                p.setBorder(new EmptyBorder(5, 5, 5, 5));
+                JLabel titleLabel = new JLabel("航班 " + fn + "  ("
+                        + route.origin + " → " + route.dest + ")");
+                titleLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+                p.add(titleLabel);
 
-            if (route.firstRem > 0) {
-                rbs[0].setSelected(true);
-            } else if (route.bizRem > 0) {
-                rbs[1].setSelected(true);
-            } else if (route.ecoRem > 0) {
-                rbs[2].setSelected(true);
-            } else {
-                rbs[2].setSelected(true);
-            }
-
-            int choice = JOptionPane.showConfirmDialog(parent, p, "选择舱位",
-                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-            if (choice != JOptionPane.OK_OPTION) {
-                return;
-            }
-
-            int cc = rbs[0].isSelected() ? 1 : rbs[1].isSelected() ? 2 : 3;
-            int rem = route.cabinRem(cc);
-            if (rem > 0) {
-                showBook(fn, route, cc, rem);
-            } else {
-                int waitChoice = JOptionPane.showConfirmDialog(parent,
-                        "该舱位暂无余票。\n\n是否加入候补队列？",
-                        "候补确认", JOptionPane.YES_NO_OPTION,
-                        JOptionPane.QUESTION_MESSAGE);
-                if (waitChoice == JOptionPane.YES_OPTION) {
-                    showWait(fn, route, cc);
+                ButtonGroup bg = new ButtonGroup();
+                JRadioButton[] rbs = new JRadioButton[3];
+                for (int i = 0; i < 3; i++) {
+                    int rem = route.cabinRem(i + 1);
+                    int cap = route.cabinCap(i + 1);
+                    rbs[i] = new JRadioButton(cabinNames[i]
+                            + "  —  余票: " + rem + " / " + cap
+                            + (rem == 0 ? "  (已售罄)" : ""));
+                    rbs[i].setEnabled(true);
+                    bg.add(rbs[i]);
+                    p.add(rbs[i]);
                 }
+
+                if (route.firstRem > 0) {
+                    rbs[0].setSelected(true);
+                } else if (route.bizRem > 0) {
+                    rbs[1].setSelected(true);
+                } else if (route.ecoRem > 0) {
+                    rbs[2].setSelected(true);
+                } else {
+                    rbs[2].setSelected(true);
+                }
+
+                int choice = JOptionPane.showConfirmDialog(parent, p, "选择舱位",
+                        JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+                if (choice != JOptionPane.OK_OPTION) {
+                    return;
+                }
+
+                int cc = rbs[0].isSelected() ? 1 : rbs[1].isSelected() ? 2 : 3;
+                int rem = route.cabinRem(cc);
+                if (rem > 0) {
+                    showBook(fn, route, cc, rem);
+                    continue;
+                }
+
+                // 统计其他舱位余票
+                int otherCount = 0;
+                for (int i = 0; i < 3; i++) {
+                    if (i + 1 != cc && route.cabinRem(i + 1) > 0) {
+                        otherCount++;
+                    }
+                }
+
+                if (otherCount > 0) {
+                    Object[] cabinOptions = new Object[otherCount + 2];
+                    int[] cabinMap = new int[otherCount];
+                    int idx = 0;
+                    for (int i = 0; i < 3; i++) {
+                        if (i + 1 != cc && route.cabinRem(i + 1) > 0) {
+                            cabinMap[idx] = i + 1;
+                            cabinOptions[idx] = cabinNames[i]
+                                    + "（余票: " + route.cabinRem(i + 1) + "）";
+                            idx++;
+                        }
+                    }
+                    cabinOptions[otherCount] = "加入候补队列";
+                    cabinOptions[otherCount + 1] = "查看其他航线";
+
+                    int pick = JOptionPane.showOptionDialog(parent,
+                            "「" + cabinNames[cc - 1] + "」已售罄，可选其他舱位：",
+                            "舱位已售罄",
+                            JOptionPane.YES_NO_CANCEL_OPTION,
+                            JOptionPane.QUESTION_MESSAGE,
+                            null, cabinOptions, cabinOptions[0]);
+
+                    if (pick >= 0 && pick < otherCount) {
+                        showBook(fn, route, cabinMap[pick],
+                                route.cabinRem(cabinMap[pick]));
+                    } else if (pick == otherCount) {
+                        showWait(fn, route, cc);
+                    } else if (pick == otherCount + 1) {
+                        showRecommend(fn, route.dest, cc, 1,
+                                "「" + cabinNames[cc - 1] + "」暂无余票");
+                    }
+                } else {
+                    Object[] options = {"加入候补队列", "查看其他航线", "取消"};
+                    int waitChoice = JOptionPane.showOptionDialog(parent,
+                            "所有舱位均已售罄，请选择：",
+                            "舱位已售罄",
+                            JOptionPane.YES_NO_CANCEL_OPTION,
+                            JOptionPane.QUESTION_MESSAGE,
+                            null, options, options[0]);
+                    if (waitChoice == 0) {
+                        showWait(fn, route, cc);
+                    } else if (waitChoice == 1) {
+                        showRecommend(fn, route.dest, cc, 1, "所有舱位均已售罄");
+                    }
+                }
+                // 关闭子对话框 → 回到舱位选择
             }
         }
 

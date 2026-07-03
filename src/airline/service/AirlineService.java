@@ -7,8 +7,8 @@ public class AirlineService {
 
     //构造方法：初始化航班列表，默认容量为30条航线，并调用init()填充初始数据
     public AirlineService() {
-        this.flightList = new FlightList(30);
-        this.flightList.init();
+        flightList = new FlightList(30);
+        flightList.init();
     }
 
     /**

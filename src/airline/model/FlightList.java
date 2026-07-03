@@ -4,11 +4,18 @@ public class FlightList {
     private FlightRoute[] routes;
     private int count;
 
+    /**
+     * 构造方法：创建指定容量的航线数组，初始元素个数为0
+     * @param capacity 航线数组最大容量
+     */
     public FlightList(int capacity) {
         this.routes = new FlightRoute[capacity];
         this.count = 0;
     }
 
+    /**
+     * 初始化航班数据：预置22条航线，覆盖国内主要城市间的航班信息
+     */
     public void init() {
         // 参数: 起始站, 终点站, 航班号, 飞机号, 飞行日,
         //       头等定额, 头等余票, 商务定额, 商务余票, 经济定额, 经济余票
@@ -58,12 +65,21 @@ public class FlightList {
                 20, 20, 60, 60, 120, 120));
     }
 
+    /**
+     * 向航线数组中添加一条航线（内部使用，数组未满时才添加）
+     * @param route 待添加的航线对象
+     */
     private void addRoute(FlightRoute route) {
         if (count < routes.length) {
             routes[count++] = route;
         }
     }
 
+    /**
+     * 按终点站名称查找第一条匹配航线
+     * @param name 终点站名称
+     * @return 匹配的第一条航线，未找到返回null
+     */
     public FlightRoute searchByStation(String name) {
         for (int i = 0; i < count; i++) {
             if (routes[i].dest.equals(name)) {
@@ -73,6 +89,11 @@ public class FlightList {
         return null;
     }
 
+    /**
+     * 按终点站名称查找所有匹配航线
+     * @param name 终点站名称
+     * @return 所有匹配的航线数组
+     */
     public FlightRoute[] searchByStationAll(String name) {
         int matchCount = 0;
         for (int i = 0; i < count; i++) {
@@ -90,6 +111,11 @@ public class FlightList {
         return result;
     }
 
+    /**
+     * 按航班号精确查找航线
+     * @param num 航班号
+     * @return 匹配的航线，未找到返回null
+     */
     public FlightRoute searchByFlight(String num) {
         for (int i = 0; i < count; i++) {
             if (routes[i].flightNo.equals(num)) {
@@ -99,6 +125,12 @@ public class FlightList {
         return null;
     }
 
+    /**
+     * 按起点和终点查找所有匹配的直达航线
+     * @param origin      起点站名称
+     * @param dest        终点站名称
+     * @return 所有匹配的航线数组
+     */
     public FlightRoute[] searchByRoute(String origin, String destination) {
         int matchCount = 0;
         for (int i = 0; i < count; i++) {
@@ -118,10 +150,19 @@ public class FlightList {
         return result;
     }
 
+    /**
+     * 获取当前航线总数
+     * @return 航线数量
+     */
     public int getCount() {
         return count;
     }
 
+    /**
+     * 按索引获取航线
+     * @param index 索引位置
+     * @return 对应航线对象，索引越界返回null
+     */
     public FlightRoute getRoute(int index) {
         if (index >= 0 && index < count) {
             return routes[index];
