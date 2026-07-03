@@ -66,7 +66,7 @@ public class FlightList {
 
     public FlightRoute searchByStation(String name) {
         for (int i = 0; i < count; i++) {
-            if (routes[i].terminalStation.equals(name)) {
+            if (routes[i].dest.equals(name)) {
                 return routes[i];
             }
         }
@@ -76,14 +76,14 @@ public class FlightList {
     public FlightRoute[] searchByStationAll(String name) {
         int matchCount = 0;
         for (int i = 0; i < count; i++) {
-            if (routes[i].terminalStation.equals(name)) {
+            if (routes[i].dest.equals(name)) {
                 matchCount++;
             }
         }
         FlightRoute[] result = new FlightRoute[matchCount];
         int idx = 0;
         for (int i = 0; i < count; i++) {
-            if (routes[i].terminalStation.equals(name)) {
+            if (routes[i].dest.equals(name)) {
                 result[idx++] = routes[i];
             }
         }
@@ -92,7 +92,7 @@ public class FlightList {
 
     public FlightRoute searchByFlight(String num) {
         for (int i = 0; i < count; i++) {
-            if (routes[i].flightNumber.equals(num)) {
+            if (routes[i].flightNo.equals(num)) {
                 return routes[i];
             }
         }
@@ -102,16 +102,16 @@ public class FlightList {
     public FlightRoute[] searchByRoute(String origin, String destination) {
         int matchCount = 0;
         for (int i = 0; i < count; i++) {
-            if (routes[i].originStation.equals(origin)
-                    && routes[i].terminalStation.equals(destination)) {
+            if (routes[i].origin.equals(origin)
+                    && routes[i].dest.equals(destination)) {
                 matchCount++;
             }
         }
         FlightRoute[] result = new FlightRoute[matchCount];
         int idx = 0;
         for (int i = 0; i < count; i++) {
-            if (routes[i].originStation.equals(origin)
-                    && routes[i].terminalStation.equals(destination)) {
+            if (routes[i].origin.equals(origin)
+                    && routes[i].dest.equals(destination)) {
                 result[idx++] = routes[i];
             }
         }

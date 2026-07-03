@@ -4,91 +4,83 @@ import airline.datastructure.LinkList;
 import airline.datastructure.LinkQueue;
 
 public class FlightRoute {
-    public String originStation;       // 起始站名
-    public String terminalStation;     // 终点站名
-    public String flightNumber;        // 航班号
-    public String aircraftNumber;      // 飞机号
-    public int flightDay;              // 飞行周日（1=周一, 7=周日）
+    public String origin;       // 起始站
+    public String dest;         // 终点站
+    public String flightNo;     // 航班号
+    public String planeNo;      // 飞机号
+    public int day;             // 飞行日（1=周一, 7=周日）
 
-    // 各舱位定额
-    public int firstClassCapacity;
-    public int businessCapacity;
-    public int economyCapacity;
+    public int firstCap;        // 头等舱定额
+    public int bizCap;          // 商务舱定额
+    public int ecoCap;          // 经济舱定额
 
-    // 各舱位余票
-    public int firstClassRemaining;
-    public int businessRemaining;
-    public int economyRemaining;
+    public int firstRem;        // 头等舱余票
+    public int bizRem;          // 商务舱余票
+    public int ecoRem;          // 经济舱余票
 
-    public LinkList<Customer> bookedList;
-    public LinkQueue<Waiter> waitQueue;
+    public LinkList<Customer> booked;
+    public LinkQueue<Waiter> queue;
 
-    public FlightRoute(String originStation, String terminalStation, String flightNumber,
-                       String aircraftNumber, int flightDay,
-                       int firstClassCapacity, int firstClassRemaining,
-                       int businessCapacity, int businessRemaining,
-                       int economyCapacity, int economyRemaining) {
-        this.originStation = originStation;
-        this.terminalStation = terminalStation;
-        this.flightNumber = flightNumber;
-        this.aircraftNumber = aircraftNumber;
-        this.flightDay = flightDay;
-        this.firstClassCapacity = firstClassCapacity;
-        this.firstClassRemaining = firstClassRemaining;
-        this.businessCapacity = businessCapacity;
-        this.businessRemaining = businessRemaining;
-        this.economyCapacity = economyCapacity;
-        this.economyRemaining = economyRemaining;
-        this.bookedList = new LinkList<>();
-        this.waitQueue = new LinkQueue<>();
+    public FlightRoute(String origin, String dest, String flightNo,
+                       String planeNo, int day,
+                       int firstCap, int firstRem,
+                       int bizCap, int bizRem,
+                       int ecoCap, int ecoRem) {
+        this.origin = origin;
+        this.dest = dest;
+        this.flightNo = flightNo;
+        this.planeNo = planeNo;
+        this.day = day;
+        this.firstCap = firstCap;
+        this.firstRem = firstRem;
+        this.bizCap = bizCap;
+        this.bizRem = bizRem;
+        this.ecoCap = ecoCap;
+        this.ecoRem = ecoRem;
+        this.booked = new LinkList<>();
+        this.queue = new LinkQueue<>();
     }
 
-    /** 获取指定舱位的余票量 */
-    public int getRemainingByCabin(int cabinClass) {
+    public int cabinRem(int cabinClass) {
         switch (cabinClass) {
-            case 1: return firstClassRemaining;
-            case 2: return businessRemaining;
-            case 3: return economyRemaining;
+            case 1: return firstRem;
+            case 2: return bizRem;
+            case 3: return ecoRem;
             default: return 0;
         }
     }
 
-    /** 获取指定舱位的定额 */
-    public int getCapacityByCabin(int cabinClass) {
+    public int cabinCap(int cabinClass) {
         switch (cabinClass) {
-            case 1: return firstClassCapacity;
-            case 2: return businessCapacity;
-            case 3: return economyCapacity;
+            case 1: return firstCap;
+            case 2: return bizCap;
+            case 3: return ecoCap;
             default: return 0;
         }
     }
 
-    /** 扣减指定舱位余票 */
-    public void reduceRemaining(int cabinClass, int count) {
+    public void reduce(int cabinClass, int count) {
         switch (cabinClass) {
-            case 1: firstClassRemaining -= count; break;
-            case 2: businessRemaining -= count; break;
-            case 3: economyRemaining -= count; break;
+            case 1: firstRem -= count; break;
+            case 2: bizRem -= count; break;
+            case 3: ecoRem -= count; break;
         }
     }
 
-    /** 增加指定舱位余票 */
-    public void increaseRemaining(int cabinClass, int count) {
+    public void increase(int cabinClass, int count) {
         switch (cabinClass) {
-            case 1: firstClassRemaining += count; break;
-            case 2: businessRemaining += count; break;
-            case 3: economyRemaining += count; break;
+            case 1: firstRem += count; break;
+            case 2: bizRem += count; break;
+            case 3: ecoRem += count; break;
         }
     }
 
-    /** 总余票量 */
-    public int totalRemaining() {
-        return firstClassRemaining + businessRemaining + economyRemaining;
+    public int totalRem() {
+        return firstRem + bizRem + ecoRem;
     }
 
-    /** 总定额 */
-    public int totalCapacity() {
-        return firstClassCapacity + businessCapacity + economyCapacity;
+    public int totalCap() {
+        return firstCap + bizCap + ecoCap;
     }
 
     public static String dayOfWeek(int day) {
@@ -106,12 +98,12 @@ public class FlightRoute {
 
     @Override
     public String toString() {
-        return originStation + " → " + terminalStation +
-               ", 航班号: " + flightNumber +
-               ", 飞机号: " + aircraftNumber +
-               ", 飞行日: " + dayOfWeek(flightDay) +
-               ", 头等舱: " + firstClassRemaining + "/" + firstClassCapacity +
-               ", 商务舱: " + businessRemaining + "/" + businessCapacity +
-               ", 经济舱: " + economyRemaining + "/" + economyCapacity;
+        return origin + " → " + dest +
+               ", 航班号: " + flightNo +
+               ", 飞机号: " + planeNo +
+               ", 飞行日: " + dayOfWeek(day) +
+               ", 头等舱: " + firstRem + "/" + firstCap +
+               ", 商务舱: " + bizRem + "/" + bizCap +
+               ", 经济舱: " + ecoRem + "/" + ecoCap;
     }
 }

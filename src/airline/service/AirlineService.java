@@ -60,19 +60,19 @@ public class AirlineService {
             return "无效的舱位等级！";
         }
 
-        int remaining = route.getRemainingByCabin(cabinClass);
+        int remaining = route.cabinRem(cabinClass);
         if (remaining >= count) {
             Customer customer = new Customer(name, count, cabinClass);
-            route.bookedList.insert(customer);
-            route.reduceRemaining(cabinClass, count);
+            route.booked.insert(customer);
+            route.reduce(cabinClass, count);
             return "订票成功！\n客户: " + name + ", 票数: " + count
-                    + ", 舱位: " + customer.getCabinName()
-                    + "\n该舱位剩余: " + route.getRemainingByCabin(cabinClass);
+                    + ", 舱位: " + customer.cabinName()
+                    + "\n该舱位剩余: " + route.cabinRem(cabinClass);
         } else {
-            int totalRemaining = route.totalRemaining();
-            return "该舱位余票不足！\n" + Customer.getCabinNameStatic(cabinClass)
+            int totalRem = route.totalRem();
+            return "该舱位余票不足！\n" + Customer.cabinName(cabinClass)
                     + "剩余: " + remaining + "，您需要: " + count + " 张"
-                    + "\n（该航班总余票: " + totalRemaining + "）";
+                    + "\n（该航班总余票: " + totalRem + "）";
         }
     }
 
@@ -92,10 +92,10 @@ public class AirlineService {
             return "航班不存在！";
         }
         Waiter waiter = new Waiter(name, count, cabinClass);
-        route.waitQueue.push(waiter);
-        int position = route.waitQueue.size();
+        route.queue.push(waiter);
+        int position = route.queue.size();
         return "候补成功！\n客户: " + name + ", 票数: " + count
-                + ", 舱位: " + Customer.getCabinNameStatic(cabinClass)
+                + ", 舱位: " + Customer.cabinName(cabinClass)
                 + "\n当前候补位次: 第 " + position + " 位";
     }
 
@@ -113,9 +113,9 @@ public class AirlineService {
         int matchCount = 0;
         for (int i = 0; i < flightList.getCount(); i++) {
             FlightRoute r = flightList.getRoute(i);
-            if (!r.flightNumber.equals(excludeFlightNum)
-                    && r.terminalStation.equals(destination)
-                    && r.getRemainingByCabin(cabinClass) >= needTickets) {
+            if (!r.flightNo.equals(excludeFlightNum)
+                    && r.dest.equals(destination)
+                    && r.cabinRem(cabinClass) >= needTickets) {
                 matchCount++;
             }
         }
@@ -123,9 +123,9 @@ public class AirlineService {
         int idx = 0;
         for (int i = 0; i < flightList.getCount(); i++) {
             FlightRoute r = flightList.getRoute(i);
-            if (!r.flightNumber.equals(excludeFlightNum)
-                    && r.terminalStation.equals(destination)
-                    && r.getRemainingByCabin(cabinClass) >= needTickets) {
+            if (!r.flightNo.equals(excludeFlightNum)
+                    && r.dest.equals(destination)
+                    && r.cabinRem(cabinClass) >= needTickets) {
                 result[idx++] = r;
             }
         }
@@ -146,24 +146,24 @@ public class AirlineService {
             return "航班不存在！";
         }
 
-        Customer customer = route.bookedList.search(name);
+        Customer customer = route.booked.search(name);
         if (customer == null) {
             return "未找到该客户的订票记录！";
         }
 
         int releasedTickets = customer.ticketCount;
         int cabinClass = customer.cabinClass;
-        boolean deleted = route.bookedList.delete(name);
+        boolean deleted = route.booked.delete(name);
         if (!deleted) {
             return "退票失败！";
         }
 
-        route.increaseRemaining(cabinClass, releasedTickets);
+        route.increase(cabinClass, releasedTickets);
         StringBuilder sb = new StringBuilder();
         sb.append("退票成功！客户: ").append(name)
-          .append("，释放 ").append(Customer.getCabinNameStatic(cabinClass))
+          .append("，释放 ").append(Customer.cabinName(cabinClass))
           .append(" ").append(releasedTickets).append(" 张")
-          .append("\n该舱位剩余: ").append(route.getRemainingByCabin(cabinClass));
+          .append("\n该舱位剩余: ").append(route.cabinRem(cabinClass));
 
         String subResult = processWaitQueue(route);
         if (!subResult.isEmpty()) {
@@ -181,17 +181,17 @@ public class AirlineService {
     private String processWaitQueue(FlightRoute route) {
         StringBuilder sb = new StringBuilder();
         int substituted = 0;
-        while (!route.waitQueue.empty()) {
-            Waiter waiter = route.waitQueue.peek();
-            int remaining = route.getRemainingByCabin(waiter.cabinClass);
+        while (!route.queue.empty()) {
+            Waiter waiter = route.queue.peek();
+            int remaining = route.cabinRem(waiter.cabinClass);
             if (remaining >= waiter.ticketCount) {
-                route.waitQueue.pop();
+                route.queue.pop();
                 Customer customer = new Customer(waiter.name, waiter.ticketCount, waiter.cabinClass);
-                route.bookedList.insert(customer);
-                route.reduceRemaining(waiter.cabinClass, waiter.ticketCount);
+                route.booked.insert(customer);
+                route.reduce(waiter.cabinClass, waiter.ticketCount);
                 substituted++;
                 sb.append("替补订票成功: ").append(waiter.name)
-                  .append("，").append(Customer.getCabinNameStatic(waiter.cabinClass))
+                  .append("，").append(Customer.cabinName(waiter.cabinClass))
                   .append(" ").append(waiter.ticketCount).append(" 张\n");
             } else {
                 break;

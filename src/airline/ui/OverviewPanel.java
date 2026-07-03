@@ -37,11 +37,11 @@ public class OverviewPanel extends JPanel {
         for (int i = 0; i < list.getCount(); i++) {
             FlightRoute r = list.getRoute(i);
             model.addRow(new Object[]{
-                    r.originStation, r.terminalStation, r.flightNumber,
-                    r.aircraftNumber, FlightRoute.dayOfWeek(r.flightDay),
-                    r.firstClassRemaining + "/" + r.firstClassCapacity,
-                    r.businessRemaining + "/" + r.businessCapacity,
-                    r.economyRemaining + "/" + r.economyCapacity
+                    r.origin, r.dest, r.flightNo,
+                    r.planeNo, FlightRoute.dayOfWeek(r.day),
+                    r.firstRem + "/" + r.firstCap,
+                    r.bizRem + "/" + r.bizCap,
+                    r.ecoRem + "/" + r.ecoCap
             });
         }
     }

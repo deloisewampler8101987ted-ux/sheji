@@ -66,17 +66,17 @@ public class CustomerPanel extends JPanel {
             JOptionPane.showMessageDialog(parentFrame, "航班不存在！");
             return;
         }
-        LinkNode<Customer> cc = r.bookedList.getHead().next;
+        LinkNode<Customer> cc = r.booked.getHead().next;
         while (cc != null) {
             Customer c = cc.data;
-            custModel.addRow(new Object[]{c.name, c.ticketCount, c.getCabinName()});
+            custModel.addRow(new Object[]{c.name, c.ticketCount, c.cabinName()});
             cc = cc.next;
         }
-        LinkNode<Waiter> wc = r.waitQueue.getFront();
+        LinkNode<Waiter> wc = r.queue.getFront();
         while (wc != null) {
             Waiter w = wc.data;
             waitModel.addRow(new Object[]{w.name, w.ticketCount,
-                    Customer.getCabinNameStatic(w.cabinClass)});
+                    Customer.cabinName(w.cabinClass)});
             wc = wc.next;
         }
     }

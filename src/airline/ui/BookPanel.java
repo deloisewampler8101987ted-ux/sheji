@@ -72,11 +72,11 @@ public class BookPanel extends JPanel {
             tip.setText("  共找到 " + results.length + " 个航班。点击右侧「预订」按钮进行操作。");
             for (FlightRoute r : results) {
                 model.addRow(new Object[]{
-                        r.flightNumber, r.aircraftNumber,
-                        FlightRoute.dayOfWeek(r.flightDay),
-                        r.firstClassRemaining + "/" + r.firstClassCapacity,
-                        r.businessRemaining + "/" + r.businessCapacity,
-                        r.economyRemaining + "/" + r.economyCapacity,
+                        r.flightNo, r.planeNo,
+                        FlightRoute.dayOfWeek(r.day),
+                        r.firstRem + "/" + r.firstCap,
+                        r.bizRem + "/" + r.bizCap,
+                        r.ecoRem + "/" + r.ecoCap,
                         "预订"
                 });
             }
@@ -122,16 +122,16 @@ public class BookPanel extends JPanel {
             JPanel p = new JPanel(new GridLayout(4, 1, 5, 5));
             p.setBorder(new EmptyBorder(5, 5, 5, 5));
             JLabel titleLabel = new JLabel("航班 " + fn + "  ("
-                    + route.originStation + " → " + route.terminalStation + ")");
+                    + route.origin + " → " + route.dest + ")");
             titleLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
             p.add(titleLabel);
 
             ButtonGroup bg = new ButtonGroup();
             JRadioButton[] rbs = new JRadioButton[3];
             for (int i = 0; i < 3; i++) {
-                int rem = route.getRemainingByCabin(i + 1);
-                int cap = route.getCapacityByCabin(i + 1);
-                rbs[i] = new JRadioButton(Customer.getCabinNameStatic(i + 1)
+                int rem = route.cabinRem(i + 1);
+                int cap = route.cabinCap(i + 1);
+                rbs[i] = new JRadioButton(Customer.cabinName(i + 1)
                         + "  —  余票: " + rem + " / " + cap
                         + (rem == 0 ? "  (已售罄)" : ""));
                 rbs[i].setEnabled(rem > 0);
@@ -139,11 +139,11 @@ public class BookPanel extends JPanel {
                 p.add(rbs[i]);
             }
 
-            if (route.firstClassRemaining > 0) {
+            if (route.firstRem > 0) {
                 rbs[0].setSelected(true);
-            } else if (route.businessRemaining > 0) {
+            } else if (route.bizRem > 0) {
                 rbs[1].setSelected(true);
-            } else if (route.economyRemaining > 0) {
+            } else if (route.ecoRem > 0) {
                 rbs[2].setSelected(true);
             } else {
                 rbs[2].setSelected(true);
@@ -156,7 +156,7 @@ public class BookPanel extends JPanel {
             }
 
             int cc = rbs[0].isSelected() ? 1 : rbs[1].isSelected() ? 2 : 3;
-            int rem = route.getRemainingByCabin(cc);
+            int rem = route.cabinRem(cc);
             if (rem > 0) {
                 showBook(fn, route, cc, rem);
             } else {
@@ -207,8 +207,8 @@ public class BookPanel extends JPanel {
 
         private void showBook(String fn, FlightRoute route, int cc, int rem) {
             String[] result = showForm("预订客票", fn,
-                    route.originStation + " → " + route.terminalStation,
-                    Customer.getCabinNameStatic(cc) + "  (余票: " + rem + ")",
+                    route.origin + " → " + route.dest,
+                    Customer.cabinName(cc) + "  (余票: " + rem + ")",
                     "订票数量:");
             if (result == null) {
                 return;
@@ -216,7 +216,7 @@ public class BookPanel extends JPanel {
             int cnt = Integer.parseInt(result[1]);
             String msg = service.bookTicket(fn, cnt, result[0], cc);
             if (msg.contains("余票不足")) {
-                showRecommend(fn, route.terminalStation, cc, cnt, msg);
+                showRecommend(fn, route.dest, cc, cnt, msg);
             } else {
                 JOptionPane.showMessageDialog(parent, msg);
             }
@@ -254,16 +254,16 @@ public class BookPanel extends JPanel {
             } else {
                 DefaultTableModel rm = new DefaultTableModel(new String[]{
                         "航班号", "起始站", "飞机号", "飞行日",
-                        Customer.getCabinNameStatic(cc) + "余票", "操作"}, 0) {
+                        Customer.cabinName(cc) + "余票", "操作"}, 0) {
                     public boolean isCellEditable(int r, int c) {
                         return c == 5;
                     }
                 };
                 for (FlightRoute r : recs) {
                     rm.addRow(new Object[]{
-                            r.flightNumber, r.originStation, r.aircraftNumber,
-                            FlightRoute.dayOfWeek(r.flightDay),
-                            r.getRemainingByCabin(cc), "预订"
+                            r.flightNo, r.origin, r.planeNo,
+                            FlightRoute.dayOfWeek(r.day),
+                            r.cabinRem(cc), "预订"
                     });
                 }
                 JTable rt = UIUtils.createTable(rm, 25);
@@ -319,9 +319,9 @@ public class BookPanel extends JPanel {
 
         private void showWait(String fn, FlightRoute route, int cc) {
             String[] result = showForm("加入候补队列", fn,
-                    route.originStation + " → " + route.terminalStation,
-                    Customer.getCabinNameStatic(cc) + "  (当前候补: "
-                            + route.waitQueue.size() + " 人)",
+                    route.origin + " → " + route.dest,
+                    Customer.cabinName(cc) + "  (当前候补: "
+                            + route.queue.size() + " 人)",
                     "候补票数:");
             if (result == null) {
                 return;

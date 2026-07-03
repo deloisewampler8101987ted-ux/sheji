@@ -16,11 +16,11 @@ public class Customer implements Comparable<Customer> {
         return this.name.compareTo(other.name);
     }
 
-    public String getCabinName() {
-        return getCabinNameStatic(cabinClass);
+    public String cabinName() {
+        return cabinName(cabinClass);
     }
 
-    public static String getCabinNameStatic(int cabinClass) {
+    public static String cabinName(int cabinClass) {
         switch (cabinClass) {
             case 1: return "头等舱";
             case 2: return "商务舱";
@@ -31,6 +31,6 @@ public class Customer implements Comparable<Customer> {
 
     @Override
     public String toString() {
-        return "姓名: " + name + ", 订票数: " + ticketCount + ", 舱位: " + getCabinName();
+        return "姓名: " + name + ", 订票数: " + ticketCount + ", 舱位: " + cabinName();
     }
 }
