@@ -5,24 +5,49 @@ import airline.model.*;
 public class AirlineService {
     private FlightList flightList;
 
+    //构造方法：初始化航班列表，默认容量为30条航线，并调用init()填充初始数据
     public AirlineService() {
         this.flightList = new FlightList(30);
         this.flightList.init();
     }
 
+    /**
+     * 获取当前航班列表对象
+     * @return FlightList 航班列表
+     */
     public FlightList getFlightList() {
         return flightList;
     }
 
+    /**
+     * 根据站点名称查询所有经过该站点的航线
+     * @param station 站点名称
+     * @return 匹配的航线数组
+     */
     public FlightRoute[] queryRouteByStation(String station) {
         return flightList.searchByStationAll(station);
     }
 
+    /**
+     * 根据起点和终点查询直达航线
+     * @param origin      起点站名称
+     * @param destination 终点站名称
+     * @return 匹配的航线数组
+     */
     public FlightRoute[] searchByRoute(String origin, String destination) {
         return flightList.searchByRoute(origin, destination);
     }
 
     // ==================== 客票预订（按舱位） ====================
+    /**
+     * 按舱位等级预订机票：检查航班是否存在、票数是否有效、舱位是否合法，
+     * 若指定舱位余票充足则扣减余票并将客户加入已订票列表
+     * @param flightNum  航班号
+     * @param count      订票数量
+     * @param name       客户姓名
+     * @param cabinClass 舱位等级（1-头等舱，2-商务舱，3-经济舱）
+     * @return 订票结果描述字符串
+     */
     public String bookTicket(String flightNum, int count, String name, int cabinClass) {
         FlightRoute route = flightList.searchByFlight(flightNum);
         if (route == null) {
@@ -52,6 +77,15 @@ public class AirlineService {
     }
 
     // ==================== 加入等候队列 ====================
+    /**
+     * 将客户加入候补队列：当指定航班舱位余票不足时，客户可选择候补，
+     * 后续有退票时会自动按候补顺序替补订票
+     * @param flightNum  航班号
+     * @param count      需要票数
+     * @param name       客户姓名
+     * @param cabinClass 舱位等级
+     * @return 候补结果描述字符串（含当前候补位次）
+     */
     public String joinWaitQueue(String flightNum, int count, String name, int cabinClass) {
         FlightRoute route = flightList.searchByFlight(flightNum);
         if (route == null) {
@@ -99,6 +133,13 @@ public class AirlineService {
     }
 
     // ==================== 退票处理 ====================
+    /**
+     * 退票处理：根据航班号和客户姓名查找订票记录，删除该记录并释放对应舱位的余票，
+     * 退票后自动处理候补队列，将释放的票按顺序分配给等候客户
+     * @param flightNum 航班号
+     * @param name      客户姓名
+     * @return 退票结果描述字符串（含替补信息）
+     */
     public String refundTicket(String flightNum, String name) {
         FlightRoute route = flightList.searchByFlight(flightNum);
         if (route == null) {
@@ -131,6 +172,12 @@ public class AirlineService {
         return sb.toString();
     }
 
+    /**
+     * 处理候补队列：退票后自动遍历等候队列，按FIFO顺序将释放的余票分配给候补客户，
+     * 若某候补客户所需票数大于当前舱位余票则停止继续分配
+     * @param route 航班航线对象
+     * @return 替补结果描述字符串
+     */
     private String processWaitQueue(FlightRoute route) {
         StringBuilder sb = new StringBuilder();
         int substituted = 0;
