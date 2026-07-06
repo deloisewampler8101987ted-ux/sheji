@@ -5,7 +5,17 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 
+/**
+ * 办理退票面板：输入航班号和客户姓名执行退票操作，
+ * 退票后自动处理候补队列，将释放的余票按顺序分配给等候客户
+ */
 public class RefundPanel extends JPanel {
+
+    /**
+     * 构造方法：初始化退票面板界面，包含顶部的航班号/姓名输入区和下方的退票结果显示区
+     * @param service     核心业务服务对象
+     * @param parentFrame 父窗口，用于弹出对话框
+     */
     public RefundPanel(AirlineService service, JFrame parentFrame) {
         setLayout(new BorderLayout(10, 10));
         UIUtils.padPanel(this);
@@ -28,6 +38,7 @@ public class RefundPanel extends JPanel {
         add(inputPanel, BorderLayout.NORTH);
         add(sp, BorderLayout.CENTER);
 
+        // 退票按钮事件监听：调用服务层退票，结果显示在下方文本区域
         refundBtn.addActionListener(e -> {
             String fn = flightField.getText().trim();
             String nm = nameField.getText().trim();

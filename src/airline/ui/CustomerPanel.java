@@ -8,11 +8,25 @@ import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
+/**
+ * 客户与队列面板：输入航班号查询该航班的已订票客户和候补队列，
+ * 以上下分割的两个表格分别展示
+ */
 public class CustomerPanel extends JPanel {
+    /** 核心业务服务对象 */
     private AirlineService service;
+    /** 父窗口，用于弹出对话框 */
     private JFrame parentFrame;
-    private DefaultTableModel custModel, waitModel;
+    /** 已订票客户表格模型 */
+    private DefaultTableModel custModel;
+    /** 候补队列表格模型 */
+    private DefaultTableModel waitModel;
 
+    /**
+     * 构造方法：初始化客户与队列面板，包含顶部航班号输入区和上下分割的两个表格
+     * @param service     核心业务服务对象
+     * @param parentFrame 父窗口，用于弹出对话框
+     */
     public CustomerPanel(AirlineService service, JFrame parentFrame) {
         this.service = service;
         this.parentFrame = parentFrame;
@@ -48,6 +62,7 @@ public class CustomerPanel extends JPanel {
         add(inputPanel, BorderLayout.NORTH);
         add(split, BorderLayout.CENTER);
 
+        // 查询按钮事件监听：根据航班号刷新已订票客户和候补队列
         queryBtn.addActionListener(e -> {
             String fn = flightField.getText().trim();
             if (fn.isEmpty()) {
@@ -58,6 +73,11 @@ public class CustomerPanel extends JPanel {
         });
     }
 
+    /**
+     * 刷新表格数据：查询指定航班的已订票客户链表和候补队列，
+     * 分别填充到上方已订票表格和下方等候队列表格
+     * @param flightNum 航班号
+     */
     private void refresh(String flightNum) {
         FlightRoute r = service.getFlightList().searchByFlight(flightNum);
         custModel.setRowCount(0);

@@ -6,10 +6,21 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
+/**
+ * 航线查询面板：根据终点站名称查询所有经过该站点的航线，
+ * 以表格形式展示查询结果
+ */
 public class QueryPanel extends JPanel {
+    /** 核心业务服务对象 */
     private AirlineService service;
+    /** 父窗口，用于弹出对话框 */
     private JFrame parentFrame;
 
+    /**
+     * 构造方法：初始化查询面板界面，包含顶部输入区和下方结果表格
+     * @param service     核心业务服务对象
+     * @param parentFrame 父窗口，用于弹出对话框
+     */
     public QueryPanel(AirlineService service, JFrame parentFrame) {
         this.service = service;
         this.parentFrame = parentFrame;
@@ -34,6 +45,7 @@ public class QueryPanel extends JPanel {
         add(inputPanel, BorderLayout.NORTH);
         add(UIUtils.createTableScroll(table, "查询结果"), BorderLayout.CENTER);
 
+        // 查询按钮事件监听：根据终点站名称查询航线并展示结果
         queryBtn.addActionListener(e -> {
             String station = stationField.getText().trim();
             if (station.isEmpty()) {

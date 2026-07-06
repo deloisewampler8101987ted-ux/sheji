@@ -1,29 +1,31 @@
-// 包声明和导入 ====================
 package airline.ui;
 
 import airline.service.AirlineService;
 import airline.model.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
-// 预订面板主类 ====================
+// 预订面板主类 
 // 该类负责航班预订的完整界面，包括航班查询、舱位选择、客票预订、候补队列和推荐航线
 public class BookPanel extends JPanel {
-    // 成员变量 ====================
+    // 成员变量 
     private AirlineService service;
     private JFrame parent;
 
-    // 构造函数：初始化预订面板界面 ====================
+    /**
+     * 构造方法：初始化预订面板界面，包含顶部查询区、中间航班结果表格和查询按钮事件
+     * @param service 核心业务服务对象
+     * @param parent  父窗口，用于弹出对话框
+     */
     public BookPanel(AirlineService service, JFrame parent) {
         this.service = service;
         this.parent = parent;
         setLayout(new BorderLayout(10, 10));
         UIUtils.padPanel(this);
 
-        // 查询面板：起始地、目的地输入和查询按钮 =====
+        // 查询面板：起始地、目的地输入和查询按钮 
         JPanel searchPanel = UIUtils.createInputPanel();
         searchPanel.add(new JLabel("起始地:"));
         JTextField originField = UIUtils.createTextField(8);
@@ -34,7 +36,7 @@ public class BookPanel extends JPanel {
         JButton searchBtn = UIUtils.createButton("查询航班");
         searchPanel.add(searchBtn);
 
-        // 航班查询结果表格：展示航班信息，最后一列为预订按钮 =====
+        // 航班查询结果表格：展示航班信息，最后一列为预订按钮 
         String[] cols = {"航班号", "飞机号", "飞行日",
                 "头等舱(余/总)", "商务舱(余/总)", "经济舱(余/总)", "操作"};
         DefaultTableModel model = new DefaultTableModel(cols, 0) {
@@ -48,24 +50,11 @@ public class BookPanel extends JPanel {
 
         JScrollPane tableScroll = UIUtils.createTableScroll(table, "查询结果（点击「预订」按钮操作）");
 
-        // 操作提示区域：显示帮助信息和查询结果提示 =====
-        JTextArea tip = new JTextArea();
-        tip.setEditable(false);
-        tip.setFont(new Font("SansSerif", Font.PLAIN, 13));
-        tip.setForeground(new Color(100, 100, 100));
-        tip.setText("  提示：输入起始地和目的地后点击「查询航班」，在结果中点击对应航班的「预订」按钮。");
-        JScrollPane tipScroll = new JScrollPane(tip);
-        tipScroll.setPreferredSize(new Dimension(0, 50));
-        tipScroll.setBorder(new TitledBorder("操作提示"));
-
-        // 界面布局组装：将查询面板、结果表格和提示区域组合 =====
-        JPanel center = new JPanel(new BorderLayout(5, 5));
-        center.add(tableScroll, BorderLayout.CENTER);
-        center.add(tipScroll, BorderLayout.SOUTH);
+        // 界面布局组装：将查询面板和结果表格组合 
         add(searchPanel, BorderLayout.NORTH);
-        add(center, BorderLayout.CENTER);
+        add(tableScroll, BorderLayout.CENTER);
 
-        // 查询按钮事件监听：根据起始地和目的地查询航班并展示结果 =====
+        // 查询按钮事件监听：根据起始地和目的地查询航班并展示结果 
         searchBtn.addActionListener(e -> {
             String o = originField.getText().trim();
             String d = destField.getText().trim();
@@ -76,10 +65,9 @@ public class BookPanel extends JPanel {
             FlightRoute[] results = service.searchByRoute(o, d);
             model.setRowCount(0);
             if (results.length == 0) {
-                tip.setText("  未找到从「" + o + "」到「" + d + "」的航班。");
+                JOptionPane.showMessageDialog(parent, "未找到从「" + o + "」到「" + d + "」的航班。");
                 return;
             }
-            tip.setText("  共找到 " + results.length + " 个航班。点击右侧「预订」按钮进行操作。");
             for (FlightRoute r : results) {
                 model.addRow(new Object[]{
                         r.flightNo, r.planeNo,
@@ -93,13 +81,21 @@ public class BookPanel extends JPanel {
         });
     }
 
-    // 预订按钮编辑器：处理航班结果表格中「预订」按钮的点击事件 ====================
+    /**
+     * 预订按钮编辑器：将表格最后一列的预订按钮点击事件
+     * 转换为订票交互流程（舱位选择-表单填写-调用服务层）
+     */
     private class BookEditor extends DefaultCellEditor {
         private JButton btn = new JButton();
         private String flightNum;
         private DefaultTableModel model;
         private boolean pushed;
 
+        /**
+         * 构造方法：初始化按钮编辑器，设置按钮外观和点击事件
+         * @param cb    JCheckBox 参数，满足 DefaultCellEditor 父类约束
+         * @param model 表格数据模型，用于读取当前行的航班号
+         */
         public BookEditor(JCheckBox cb, DefaultTableModel model) {
             super(cb);
             this.model = model;
@@ -107,6 +103,15 @@ public class BookPanel extends JPanel {
             btn.addActionListener(e -> fireEditingStopped());
         }
 
+        /**
+         * 当用户点击表格单元格时调用，读取当前行航班号并用按钮替换单元格
+         * @param t 表格对象
+         * @param v 单元格当前值
+         * @param s 是否选中
+         * @param r 行号
+         * @param c 列号
+         * @return 返回 JButton 作为单元格编辑器
+         */
         public Component getTableCellEditorComponent(JTable t, Object v,
                 boolean s, int r, int c) {
             flightNum = (String) model.getValueAt(r, 0);
@@ -115,6 +120,10 @@ public class BookPanel extends JPanel {
             return btn;
         }
 
+        /**
+         * 编辑结束后由表格调用，触发订票流程
+         * @return 固定返回 "预订" 字符串，恢复单元格显示
+         */
         public Object getCellEditorValue() {
             if (pushed) {
                 pushed = false;
@@ -123,7 +132,11 @@ public class BookPanel extends JPanel {
             return "预订";
         }
 
-        // 处理预订逻辑：选择舱位、处理售罄情况、提供候补和推荐选项 =====
+        /**
+         * 处理预订逻辑：弹出舱位选择对话框，用户选择舱位后进入订票流程，
+         * 若所选舱位售罄则引导用户选择其他舱位、加入候补队列或查看推荐航线
+         * @param fn 航班号
+         */
         private void handleBooking(String fn) {
             FlightRoute route = service.getFlightList().searchByFlight(fn);
             if (route == null) {
@@ -233,7 +246,15 @@ public class BookPanel extends JPanel {
             }
         }
 
-        // 显示预订/候补表单：收集客户姓名和票数信息 =====
+        /**
+         * 弹出预订或候补表单对话框，收集客户姓名和票数信息
+         * @param title       对话框标题
+         * @param fn          航班号
+         * @param routeInfo   航线信息（起终点）
+         * @param cabinInfo   舱位信息（名称和余票）
+         * @param ticketLabel 票数输入框标签
+         * @return 包含姓名和票数的数组，用户取消返回 null
+         */
         private String[] showForm(String title, String fn, String routeInfo,
                 String cabinInfo, String ticketLabel) {
             JPanel p = new JPanel(new GridBagLayout());
@@ -269,7 +290,13 @@ public class BookPanel extends JPanel {
             return new String[]{name, cntStr};
         }
 
-        // 执行预订操作：调用服务层进行客票预订，余票不足时推荐其他航线 =====
+        /**
+         * 执行客票预订：调用服务层 bookTicket 方法，订票失败时自动推荐其他航线
+         * @param fn    航班号
+         * @param route 航线对象
+         * @param cc    舱位等级（1-头等舱，2-商务舱，3-经济舱）
+         * @param rem   当前舱位余票数
+         */
         private void showBook(String fn, FlightRoute route, int cc, int rem) {
             String[] result = showForm("预订客票", fn,
                     route.origin + " → " + route.dest,
@@ -287,7 +314,15 @@ public class BookPanel extends JPanel {
             }
         }
 
-        // 辅助方法：向面板添加「标签-值」行，支持 JLabel 和 JComponent 两种值类型 =====
+        /**
+         * 辅助布局方法：向面板的指定行添加「标签-值」组合，
+         * 值可以是 JLabel（显示文本）或 JComponent（输入框等交互组件）
+         * @param p     目标面板
+         * @param g     GridBagConstraints 布局约束
+         * @param y     行号
+         * @param label 标签文字
+         * @param value 值，可以是 String 或 JComponent
+         */
         private void addLabelValue(JPanel p, GridBagConstraints g, int y,
                 String label, Object value) {
             g.gridx = 0;
@@ -303,7 +338,15 @@ public class BookPanel extends JPanel {
             }
         }
 
-        // 显示推荐航线：当前航班余票不足时，推荐到达同一目的地的其他航班 =====
+        /**
+         * 显示推荐航线弹窗：当前航班余票不足时，查找到达同一目的地的其他有余票航班，
+         * 以表格形式展示，用户可点击「预订」按钮直接订票
+         * @param exclude  需要排除的航班号（当前已失败的航班）
+         * @param dest     目的地
+         * @param cc       舱位等级
+         * @param need     需要的票数
+         * @param failMsg  订票失败原因信息
+         */
         private void showRecommend(String exclude, String dest, int cc,
                 int need, String failMsg) {
             FlightRoute[] recs = service.recommendSameDestination(
@@ -348,7 +391,10 @@ public class BookPanel extends JPanel {
                     JOptionPane.INFORMATION_MESSAGE);
         }
 
-        // 推荐航线表格中的预订按钮编辑器：处理推荐航线表格中「预订」按钮的点击 =====
+        /**
+         * 推荐航线表格中的预订按钮编辑器：处理推荐航线表格中「预订」按钮的点击，
+         * 点击后直接进入该航班的订票流程
+         */
         private class RecEditor extends DefaultCellEditor {
             private JButton btn = new JButton();
             private String fn;
@@ -356,6 +402,12 @@ public class BookPanel extends JPanel {
             private DefaultTableModel rm;
             private boolean pushed;
 
+            /**
+             * 构造方法：初始化推荐航线表格的按钮编辑器
+             * @param cb JCheckBox 参数，满足 DefaultCellEditor 父类约束
+             * @param rm 推荐航线表格的数据模型
+             * @param cc 当前推荐的舱位等级
+             */
             public RecEditor(JCheckBox cb, DefaultTableModel rm, int cc) {
                 super(cb);
                 this.rm = rm;
@@ -364,6 +416,15 @@ public class BookPanel extends JPanel {
                 btn.addActionListener(e -> fireEditingStopped());
             }
 
+            /**
+             * 当用户点击推荐航线表格单元格时调用，读取航班号和余票数
+             * @param t 表格对象
+             * @param v 单元格当前值
+             * @param s 是否选中
+             * @param r 行号
+             * @param c 列号
+             * @return 返回 JButton 作为单元格编辑器
+             */
             public Component getTableCellEditorComponent(JTable t, Object v,
                     boolean s, int r, int c) {
                 fn = (String) rm.getValueAt(r, 0);
@@ -373,6 +434,10 @@ public class BookPanel extends JPanel {
                 return btn;
             }
 
+            /**
+             * 编辑结束后由表格调用，查找航线后进入订票流程
+             * @return 固定返回 "预订" 字符串
+             */
             public Object getCellEditorValue() {
                 if (pushed) {
                     pushed = false;
@@ -385,7 +450,13 @@ public class BookPanel extends JPanel {
             }
         }
 
-        // 加入候补队列：当舱位售罄时，将客户加入候补等待退票 =====
+        /**
+         * 加入候补队列：当舱位售罄时，弹出表单收集客户信息后加入候补等待退票，
+         * 候补客户按 FIFO 顺序在有退票时自动替补订票
+         * @param fn    航班号
+         * @param route 航线对象
+         * @param cc    舱位等级
+         */
         private void showWait(String fn, FlightRoute route, int cc) {
             String[] result = showForm("加入候补队列", fn,
                     route.origin + " → " + route.dest,
