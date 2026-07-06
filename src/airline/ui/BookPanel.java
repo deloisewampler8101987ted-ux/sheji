@@ -1,3 +1,4 @@
+// 包声明和导入 ====================
 package airline.ui;
 
 import airline.service.AirlineService;
@@ -8,16 +9,21 @@ import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
+// 预订面板主类 ====================
+// 该类负责航班预订的完整界面，包括航班查询、舱位选择、客票预订、候补队列和推荐航线
 public class BookPanel extends JPanel {
+    // 成员变量 ====================
     private AirlineService service;
     private JFrame parent;
 
+    // 构造函数：初始化预订面板界面 ====================
     public BookPanel(AirlineService service, JFrame parent) {
         this.service = service;
         this.parent = parent;
         setLayout(new BorderLayout(10, 10));
         UIUtils.padPanel(this);
 
+        // 查询面板：起始地、目的地输入和查询按钮 =====
         JPanel searchPanel = UIUtils.createInputPanel();
         searchPanel.add(new JLabel("起始地:"));
         JTextField originField = UIUtils.createTextField(8);
@@ -28,6 +34,7 @@ public class BookPanel extends JPanel {
         JButton searchBtn = UIUtils.createButton("查询航班");
         searchPanel.add(searchBtn);
 
+        // 航班查询结果表格：展示航班信息，最后一列为预订按钮 =====
         String[] cols = {"航班号", "飞机号", "飞行日",
                 "头等舱(余/总)", "商务舱(余/总)", "经济舱(余/总)", "操作"};
         DefaultTableModel model = new DefaultTableModel(cols, 0) {
@@ -41,6 +48,7 @@ public class BookPanel extends JPanel {
 
         JScrollPane tableScroll = UIUtils.createTableScroll(table, "查询结果（点击「预订」按钮操作）");
 
+        // 操作提示区域：显示帮助信息和查询结果提示 =====
         JTextArea tip = new JTextArea();
         tip.setEditable(false);
         tip.setFont(new Font("SansSerif", Font.PLAIN, 13));
@@ -50,12 +58,14 @@ public class BookPanel extends JPanel {
         tipScroll.setPreferredSize(new Dimension(0, 50));
         tipScroll.setBorder(new TitledBorder("操作提示"));
 
+        // 界面布局组装：将查询面板、结果表格和提示区域组合 =====
         JPanel center = new JPanel(new BorderLayout(5, 5));
         center.add(tableScroll, BorderLayout.CENTER);
         center.add(tipScroll, BorderLayout.SOUTH);
         add(searchPanel, BorderLayout.NORTH);
         add(center, BorderLayout.CENTER);
 
+        // 查询按钮事件监听：根据起始地和目的地查询航班并展示结果 =====
         searchBtn.addActionListener(e -> {
             String o = originField.getText().trim();
             String d = destField.getText().trim();
@@ -83,7 +93,7 @@ public class BookPanel extends JPanel {
         });
     }
 
-    // ==================== 预订按钮编辑器 ====================
+    // 预订按钮编辑器：处理航班结果表格中「预订」按钮的点击事件 ====================
     private class BookEditor extends DefaultCellEditor {
         private JButton btn = new JButton();
         private String flightNum;
@@ -113,6 +123,7 @@ public class BookPanel extends JPanel {
             return "预订";
         }
 
+        // 处理预订逻辑：选择舱位、处理售罄情况、提供候补和推荐选项 =====
         private void handleBooking(String fn) {
             FlightRoute route = service.getFlightList().searchByFlight(fn);
             if (route == null) {
@@ -222,6 +233,7 @@ public class BookPanel extends JPanel {
             }
         }
 
+        // 显示预订/候补表单：收集客户姓名和票数信息 =====
         private String[] showForm(String title, String fn, String routeInfo,
                 String cabinInfo, String ticketLabel) {
             JPanel p = new JPanel(new GridBagLayout());
@@ -257,6 +269,7 @@ public class BookPanel extends JPanel {
             return new String[]{name, cntStr};
         }
 
+        // 执行预订操作：调用服务层进行客票预订，余票不足时推荐其他航线 =====
         private void showBook(String fn, FlightRoute route, int cc, int rem) {
             String[] result = showForm("预订客票", fn,
                     route.origin + " → " + route.dest,
@@ -274,6 +287,7 @@ public class BookPanel extends JPanel {
             }
         }
 
+        // 辅助方法：向面板添加「标签-值」行，支持 JLabel 和 JComponent 两种值类型 =====
         private void addLabelValue(JPanel p, GridBagConstraints g, int y,
                 String label, Object value) {
             g.gridx = 0;
@@ -289,6 +303,7 @@ public class BookPanel extends JPanel {
             }
         }
 
+        // 显示推荐航线：当前航班余票不足时，推荐到达同一目的地的其他航班 =====
         private void showRecommend(String exclude, String dest, int cc,
                 int need, String failMsg) {
             FlightRoute[] recs = service.recommendSameDestination(
@@ -333,6 +348,7 @@ public class BookPanel extends JPanel {
                     JOptionPane.INFORMATION_MESSAGE);
         }
 
+        // 推荐航线表格中的预订按钮编辑器：处理推荐航线表格中「预订」按钮的点击 =====
         private class RecEditor extends DefaultCellEditor {
             private JButton btn = new JButton();
             private String fn;
@@ -369,6 +385,7 @@ public class BookPanel extends JPanel {
             }
         }
 
+        // 加入候补队列：当舱位售罄时，将客户加入候补等待退票 =====
         private void showWait(String fn, FlightRoute route, int cc) {
             String[] result = showForm("加入候补队列", fn,
                     route.origin + " → " + route.dest,
